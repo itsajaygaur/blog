@@ -75,8 +75,16 @@
     }
   }
 
+  /* h1, h2, h3, h4, h5, h6{
+    @apply text-6xl
+  } */
 
   .bn-container[data-theming-css-variables-demo][data-color-scheme="dark"] {
     --bn-colors-editor-background: 240 10% 3.9%;
   }
    
+.custom{
+  h1{
+    font-size: 48px;
+  }
+}
