@@ -59,6 +59,8 @@ export const blogs = pgTable("blog", {
   createdAt: timestamp("createdAt", { mode: "date" }),
 });
 
+export type Blog = typeof blogs.$inferSelect
+
 //   export const sessions = pgTable("session", {
 //     id: text("id").primaryKey().$defaultFn(() => randomUUID()),
 //     sessionToken: text("sessionToken").notNull().unique(),

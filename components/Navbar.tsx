@@ -10,7 +10,8 @@ export default async function Navbar(){
     const session = await auth()
 
     return(
-        <nav className="flex justify-between items-center py-3 px-6 border-b" >
+        // <nav className="flex justify-between items-center  px-6 border-b sticky top-0 z-10 backdrop-blur-md  h-16 -mt-16 mb-16" >
+        <nav className="flex justify-between items-center  px-6 border-b h-16" >
             <Link href="/" >
               <h1 className="text-xl font-semibold" >blog</h1>
             </Link>
@@ -36,11 +37,11 @@ export default async function Navbar(){
           </>
       :
 
-          <Button type="submit" >
             <Link href="/login" >
+          <Button type="submit" >
                 Login
-            </Link>
         </Button>
+            </Link>
 
 
       }

@@ -13,7 +13,8 @@ import {
 
 export default function Login(){
     return(
-        <section className="flex justify-center items-center h-dvh bg-gradient-to-tl from-slate-100 via-sky-50 to-sky-300 backdrop-blur-md dark:from-black dark:to-gray-700" >
+        // <section className="flex justify-center items-center h-dvh bg-gradient-to-tl from-slate-100 via-sky-50 to-sky-300 backdrop-blur-md dark:from-black dark:to-gray-700" >
+        <section className="flex justify-center items-center h-dvh -mt-16" >
 
         <Card className="max-w-sm w-full items-center rounded-3xl" >
             <CardHeader>
