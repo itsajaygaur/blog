@@ -22,7 +22,7 @@ export async function addBlog(title: string, content: string){
         const addBlog = await db.insert(blogs).values({title, content, slug, userId: session?.user?.id })
 
         if(!addBlog) return {success: false, message: "Failed to add the blog"}
-        revalidatePath('/')
+        revalidatePath('/blogs')
         // redirect('/')
         return {success: true, message: "Blog added successfully"}
 
@@ -45,7 +45,7 @@ export async function updateBlog(id: string, title: string, content: string){
 
         if(!updateBlog) return {success: false, message: "Failed to update the blog"}
 
-        revalidatePath('/')
+        revalidatePath('/blogs')
         // redirect('/')
 
         return {success: true, message: "Blog updated successfully"}
@@ -65,6 +65,7 @@ export async function deleteBlog(id: string){
         const deleteBlog = await db.delete(blogs).where(eq(blogs.id, id))
 
         if(!deleteBlog) return {success: false, message: "Failed to delete the blog"}
+        revalidatePath('/blogs')
         return {success: true, message: "Blog deleted successfully"}
 
     } catch (error) {

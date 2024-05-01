@@ -7,6 +7,27 @@ import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { auth } from "@/auth"
 import { deleteBlog } from "../actions"
+import { Ellipsis } from 'lucide-react';
+
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
+export async function generateMetadata({params: {slug}}: {params: {slug: string}}){
+    const blog = await db.select().from(blogs).where(eq(blogs.slug, slug))
+    return{
+      title: blog[0].title,
+    }
+  }
+  
 
 export default async function BlogPost({params: {slug}}: {params: {slug: string}}){
 
@@ -15,31 +36,56 @@ export default async function BlogPost({params: {slug}}: {params: {slug: string}
     // console.log(blog)
     if(!blog.length) return notFound()
 
+
     return(
         <section>
-        <div className="prose prose-h1:text-5xl dark:prose-headings:text-white dark:prose-p:text-white dark:*:prose-p:text-white  dark:prose-blockquote:text-white  max-w-3xl mx-auto my-10 " >
+        <div className="prose prose-h1:text-5xl dark:prose-headings:text-white dark:prose-p:text-white dark:*:prose-p:text-white  dark:prose-blockquote:text-white prose-img:w-full  max-w-3xl mx-auto my-10 " >
 
-            {
+<div className="text-end" >
+
+        {
                 session?.user &&
-                <div className="flex items-center justify-end gap-2" >
-                <Link href={`/${slug}/edit`} >
-                    <Button variant="link" >Edit</Button>
+
+        <DropdownMenu  >
+      <DropdownMenuTrigger asChild className="" > 
+        {/* <Button variant="outline">Open</Button> */}
+        <Button variant="ghost" >
+        <Ellipsis />
+        </Button>
+
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-44">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+
+                <Link href={`/${slug}/edit`} className="w-full hover:bg-pink-400" >
+        <DropdownMenuItem >
+                    Edit
+        </DropdownMenuItem>
                 </Link>
-                <form action={async () => {
+
+                <form className="w-full" action={async () => {
                     "use server"
                     const res = await deleteBlog(blog[0].id)
-                    if(res.success) return redirect(`/`)
-                }}>
+                    if(res.success) return redirect(`/blogs`)
+                    }}>
 
-                <Button  type="submit" variant="destructive" >
+                <button type="submit" className=" w-full"   >
+        <DropdownMenuItem className="" >
                     Delete
-                </Button>
+        </DropdownMenuItem>
+                </button>
                 </form>
-                </div>
-            }
+
+
+      </DropdownMenuContent>
+    </DropdownMenu>
+}
+
+</div>
 
             {/* <MDXRemote source={`${blog[0].content}`} /> */}
-            <div className="px-[54px]" dangerouslySetInnerHTML={{__html: `${blog[0].content}` }} ></div>
+            <div className="px-4" dangerouslySetInnerHTML={{__html: `${blog[0].content}` }} ></div>
         </div>
             
         </section>

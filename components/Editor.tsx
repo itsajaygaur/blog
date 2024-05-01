@@ -27,7 +27,7 @@ export default function Editor({blogToUpdate}: {blogToUpdate?: Blog }) {
       // const title = editor.document[0].content.length > 0 && editor.document[0].content[0].text
       const response = blogToUpdate?.id ? await updateBlog(blogToUpdate?.id!, title, markdown) : await addBlog(title, markdown);
       // console.log("response ", response);
-      if(response.success) return router.replace('/')
+      if(response.success) return router.replace('/blogs')
     } catch (error) {
       console.log({ error });
     } finally {

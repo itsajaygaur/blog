@@ -10,11 +10,11 @@ export default async function Home() {
 
   return (
     <main  >
-      <div className="text-center pt-44">
-        <h1 className="text-7xl font-bold mb-8">
+      <div className="text-center pt-44 px-4">
+        <h1 className="text-5xl md:text-7xl font-bold mb-8">
           Discover the Latest <span className="text-sky-500"> Insights </span>
         </h1>
-        <p className="text-2xl max-w-2xl mx-auto mb-12">
+        <p className=" sm:text-xl md:text-2xl max-w-2xl mx-auto mb-12">
           Explore our collection of thought-provoking articles and stay ahead of
           the curve.
         </p>
