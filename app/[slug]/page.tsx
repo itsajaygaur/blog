@@ -44,7 +44,7 @@ export default async function BlogPost({params: {slug}}: {params: {slug: string}
 <div className="text-end" >
 
         {
-                session?.user &&
+                session?.user && blog[0].userId === session.user.id &&
 
         <DropdownMenu  >
       <DropdownMenuTrigger asChild className="" > 
