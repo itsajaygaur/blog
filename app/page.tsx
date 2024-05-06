@@ -4,13 +4,14 @@ import { blogs } from "@/db/schema";
 import Link from "next/link";
 import cheerio from "cheerio";
 import Image from "next/image";
+import Footer from "@/components/Footer";
 
 export default async function Home() {
   const allBlogs = await db.select().from(blogs);
 
   return (
-    <main  >
-      <div className="text-center pt-44 px-4">
+    <main className="flex flex-col h-dvh justify-between" >
+      <div className="text-center pt-44 px-4 ">
         <h1 className="text-5xl md:text-7xl font-bold mb-8">
           Discover the Latest <span className="text-sky-500"> Insights </span>
         </h1>
@@ -23,7 +24,10 @@ export default async function Home() {
           Read Blogs
         </Button>
         </Link>
+
+
       </div>
+        <Footer />
 
 
       {/* {allBlogs.map((blog, index) => {
