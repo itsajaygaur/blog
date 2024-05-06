@@ -36,7 +36,7 @@ export default async function AllBlogs() {
             >
               <div>
 
-              <h2 className="text-3xl mb-2 font-medium">{blog.title}</h2>
+              <h2 className="text-3xl mb-2 font-medium line-clamp-3">{blog.title}</h2>
               <p className="text-sm" >{Math.floor(Math.random() * 8 + 2)} min read</p>
               </div>
               <Image

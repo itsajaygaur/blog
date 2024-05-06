@@ -24,7 +24,7 @@ export default async function Navbar(){
         session?.user ?
         <>
         <Link href={`/new-story`} >
-          <Button variant="ghost" ><SquarePen className="mr-2" size={18} /> Write</Button>
+          <Button variant="ghost" ><SquarePen className="mr-2" size={18} /> Write your story</Button>
         </Link>
           <form
         action={async () => {
@@ -38,8 +38,8 @@ export default async function Navbar(){
       :
 
             <Link href="/login" >
-          <Button type="submit" >
-                Login
+          <Button type="submit" variant="ghost" >
+          <SquarePen className="mr-2" size={18} /> write your story
         </Button>
             </Link>
 

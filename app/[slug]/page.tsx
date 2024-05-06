@@ -39,7 +39,7 @@ export default async function BlogPost({params: {slug}}: {params: {slug: string}
 
     return(
         <section>
-        <div className="prose prose-h1:text-5xl dark:prose-headings:text-white dark:prose-p:text-white dark:*:prose-p:text-white  dark:prose-blockquote:text-white prose-img:w-full  max-w-3xl mx-auto my-10 " >
+        <div className="prose prose-h1:text-5xl dark:prose-headings:text-white dark:prose-p:text-white dark:*:prose-p:text-white  dark:prose-blockquote:text-white prose-li:marker:text-blue-500 prose-a:text-blue-500 dark:prose-a:text-blue-500 prose-img:w-full  max-w-3xl mx-auto my-10 " >
 
 <div className="text-end" >
 
