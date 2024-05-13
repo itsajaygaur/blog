@@ -8,7 +8,7 @@ export default function Footer() {
   return (
     <footer className=" border-t py-10 px-4 bg-gray-50 dark:bg-zinc-900">
       <p className="text-center mb-6">
-        Made by
+        Made by {" "}
         <Link
           target="_blank"
           href="https://ajaygaur.in"
@@ -30,7 +30,7 @@ export default function Footer() {
 
         <Button variant="link">
           <FaLinkedin size={18} className="mr-2" />
-          <Link target="_blank" href="https://github.com/itsajaygaur/blog">
+          <Link target="_blank" href="https://linkedin.com/in/itsajaygaur">
             LinkedIn
           </Link>
         </Button>
