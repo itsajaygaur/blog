@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      AUTH_GOOGLE_ID: ${{ secrets.AUTH_GOOGLE_ID }}
+      AUTH_GOOGLE_SECRET: ${{ secrets.AUTH_GOOGLE_SECRET }}
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Install Chromium
+        if: env.DATABASE_URL != ''
+        run: npx playwright install --with-deps chromium
+      - name: Browser acceptance tests
+        if: env.DATABASE_URL != ''
+        run: npm run test:e2e -- --project=chromium
+      - name: Lighthouse budgets
+        if: env.DATABASE_URL != ''
+        run: |
+          npm run start &
+          npx wait-on http://127.0.0.1:3000
+          npm run test:lighthouse
