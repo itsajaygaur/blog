@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { changePostStatus, publishPost, saveDraft } from "@/app/actions";
 import { startNavigation } from "@/components/navigation-progress";
 import { Button } from "@/components/ui/button";
+import { getUploadErrorMessage, validateImageUpload } from "@/lib/uploads";
 
 type EditorPost = {
   id: string;
@@ -50,6 +51,12 @@ export function StoryEditor({ post }: { post: EditorPost }) {
   const editor = useCreateBlockNote({
     initialContent: post.contentJson,
     uploadFile: async (file) => {
+      const validationMessage = validateImageUpload(file);
+      if (validationMessage) {
+        setSaveState("error");
+        setMessage(validationMessage);
+        throw new Error(validationMessage);
+      }
       try {
         const result = await upload(`draftline/${post.id}/${file.name}`, file, {
           access: "public",
@@ -66,7 +73,7 @@ export function StoryEditor({ post }: { post: EditorPost }) {
       } catch (error) {
         setUploadProgress(null);
         setSaveState("error");
-        setMessage(error instanceof Error ? error.message : "Image upload failed.");
+        setMessage(getUploadErrorMessage(error));
         throw error;
       }
     },
@@ -115,6 +122,12 @@ export function StoryEditor({ post }: { post: EditorPost }) {
   }, [title, excerpt, tagInput, coverImageUrl, coverImageAlt, revision, persist]);
 
   async function uploadCover(file: File) {
+    const validationMessage = validateImageUpload(file);
+    if (validationMessage) {
+      setSaveState("error");
+      setMessage(validationMessage);
+      return;
+    }
     try {
       setSaveState("saving");
       const result = await upload(`draftline/${post.id}/cover-${file.name}`, file, {
@@ -129,7 +142,7 @@ export function StoryEditor({ post }: { post: EditorPost }) {
     } catch (error) {
       setUploadProgress(null);
       setSaveState("error");
-      setMessage(error instanceof Error ? error.message : "Cover upload failed.");
+      setMessage(getUploadErrorMessage(error));
     }
   }
 
@@ -204,7 +217,11 @@ export function StoryEditor({ post }: { post: EditorPost }) {
             </div>
             <label className="inline-flex cursor-pointer items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold hover:bg-secondary">
               <ImagePlus className="mr-2 size-4" />{coverImageUrl ? "Replace cover" : "Add cover"}
-              <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadCover(file); }} />
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="sr-only" onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.currentTarget.value = "";
+                if (file) void uploadCover(file);
+              }} />
             </label>
           </div>
 
