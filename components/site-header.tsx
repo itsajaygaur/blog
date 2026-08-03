@@ -7,7 +7,7 @@ import { getSession } from "@/lib/session";
 export async function SiteHeader() {
   const session = await getSession();
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/88 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b bg-background">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Logo />
         <nav aria-label="Primary navigation" className="flex items-center gap-1 sm:gap-3">
