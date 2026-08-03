@@ -9,9 +9,11 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { MantineProvider } from "@mantine/core";
 import { upload } from "@vercel/blob/client";
 import { Archive, Check, Cloud, Eye, ImagePlus, LoaderCircle, Send, Undo2, UploadCloud } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { changePostStatus, publishPost, saveDraft } from "@/app/actions";
+import { startNavigation } from "@/components/navigation-progress";
 import { Button } from "@/components/ui/button";
 
 type EditorPost = {
@@ -29,6 +31,8 @@ type EditorPost = {
 
 export function StoryEditor({ post }: { post: EditorPost }) {
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
+  const editorTheme = resolvedTheme === "dark" ? "dark" : "light";
   const [title, setTitle] = useState(post.title === "Untitled story" ? "" : post.title);
   const [excerpt, setExcerpt] = useState(post.excerpt);
   const [tagInput, setTagInput] = useState(post.tags.join(", "));
@@ -37,6 +41,7 @@ export function StoryEditor({ post }: { post: EditorPost }) {
   const [revision, setRevision] = useState(0);
   const [saveState, setSaveState] = useState<"saved" | "saving" | "unsaved" | "error">("saved");
   const [message, setMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
   const versionRef = useRef(post.version);
@@ -69,25 +74,34 @@ export function StoryEditor({ post }: { post: EditorPost }) {
 
   const persist = useCallback(async () => {
     setSaveState("saving");
-    const result = await saveDraft({
-      id: post.id,
-      title,
-      excerpt,
-      contentJson: editor.document,
-      coverImageUrl,
-      coverImageAlt,
-      tags: tagInput.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 5),
-      version: versionRef.current,
-    });
-    if (!result.ok) {
+    try {
+      const result = await saveDraft({
+        id: post.id,
+        title,
+        excerpt,
+        contentJson: editor.document,
+        coverImageUrl,
+        coverImageAlt,
+        tags: tagInput.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 5),
+        version: versionRef.current,
+      });
+      if (!result.ok) {
+        setSaveState("error");
+        setMessage(result.message);
+        setFieldErrors(result.fieldErrors ?? {});
+        return null;
+      }
+      versionRef.current = result.data.version;
+      setSaveState("saved");
+      setMessage("");
+      setFieldErrors({});
+      return result.data.version;
+    } catch {
       setSaveState("error");
-      setMessage(result.message);
+      setMessage("Draftline could not save this change. Your work is still in the editor—please try again.");
+      setFieldErrors({});
       return null;
     }
-    versionRef.current = result.data.version;
-    setSaveState("saved");
-    setMessage("");
-    return result.data.version;
   }, [coverImageAlt, coverImageUrl, editor, excerpt, post.id, tagInput, title]);
 
   useEffect(() => {
@@ -120,7 +134,7 @@ export function StoryEditor({ post }: { post: EditorPost }) {
   }
 
   return (
-    <MantineProvider forceColorScheme="light">
+    <MantineProvider forceColorScheme={editorTheme}>
       <div className="editor-shell">
         <div className="sticky top-16 z-30 -mx-4 mb-10 border-b bg-background/92 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
@@ -141,11 +155,23 @@ export function StoryEditor({ post }: { post: EditorPost }) {
                 onClick={() => startTransition(async () => {
                   const version = await persist();
                   if (!version) return;
-                  const result = await publishPost(post.id, version);
-                  if (!result.ok) { setMessage(result.message); setSaveState("error"); return; }
-                  versionRef.current = result.data.version;
-                  router.push(`/stories/${result.data.slug}`);
-                  router.refresh();
+                  try {
+                    const result = await publishPost(post.id, version);
+                    if (!result.ok) {
+                      setMessage(result.message);
+                      setFieldErrors(result.fieldErrors ?? {});
+                      setSaveState("error");
+                      return;
+                    }
+                    versionRef.current = result.data.version;
+                    startNavigation();
+                    router.push(`/stories/${result.data.slug}`);
+                    router.refresh();
+                  } catch {
+                    setMessage("Publishing did not complete. Your draft is saved, so you can safely try again.");
+                    setFieldErrors({});
+                    setSaveState("error");
+                  }
                 })}
               >
                 {isPending ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : <Send className="mr-2 size-4" />}{post.status === "published" ? "Update" : "Publish"}
@@ -153,6 +179,17 @@ export function StoryEditor({ post }: { post: EditorPost }) {
             </div>
           </div>
         </div>
+
+        {saveState === "error" && message && (
+          <div className="mx-auto mb-8 max-w-5xl rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">
+            <p className="font-semibold">{message}</p>
+            {Object.values(fieldErrors).flat().length > 0 && (
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                {[...new Set(Object.values(fieldErrors).flat())].map((error) => <li key={error}>{error}</li>)}
+              </ul>
+            )}
+          </div>
+        )}
 
         <div className="mx-auto max-w-3xl">
           <label htmlFor="story-title" className="sr-only">Story title</label>
@@ -171,15 +208,39 @@ export function StoryEditor({ post }: { post: EditorPost }) {
             </label>
           </div>
 
-          <BlockNoteView editor={editor} onChange={() => setRevision((value) => value + 1)} theme="light" />
+          <BlockNoteView editor={editor} onChange={() => setRevision((value) => value + 1)} theme={editorTheme} />
 
           <div className="mt-10 border-t pt-8">
             <label htmlFor="story-tags" className="text-sm font-semibold">Topics</label>
             <p className="mt-1 text-sm text-muted-foreground">Up to five, separated by commas.</p>
             <input id="story-tags" value={tagInput} onChange={(event) => setTagInput(event.target.value)} placeholder="Design, Engineering, Career" className="mt-3 h-11 w-full rounded-xl border bg-card px-4 outline-none focus:ring-2 focus:ring-ring" />
             <div className="mt-6 flex flex-wrap gap-2">
-              {post.status === "published" && <Button variant="outline" type="button" disabled={isPending} onClick={() => startTransition(async () => { await changePostStatus(post.id, "draft"); router.push("/studio"); router.refresh(); })}><Undo2 className="mr-2 size-4" />Unpublish</Button>}
-              <Button variant="ghost" type="button" disabled={isPending} className="text-muted-foreground hover:text-destructive" onClick={() => { if (window.confirm("Archive this story? It will disappear from public pages.")) startTransition(async () => { await changePostStatus(post.id, "archived"); router.push("/studio"); router.refresh(); }); }}><Archive className="mr-2 size-4" />Archive story</Button>
+              {post.status === "published" && <Button variant="outline" type="button" disabled={isPending} onClick={() => startTransition(async () => {
+                try {
+                  const result = await changePostStatus(post.id, "draft");
+                  if (!result.ok) { setMessage(result.message); setSaveState("error"); return; }
+                  startNavigation();
+                  router.push("/studio");
+                  router.refresh();
+                } catch {
+                  setMessage("The story could not be unpublished. Please try again.");
+                  setSaveState("error");
+                }
+              })}><Undo2 className="mr-2 size-4" />Unpublish</Button>}
+              <Button variant="ghost" type="button" disabled={isPending} className="text-muted-foreground hover:text-destructive" onClick={() => {
+                if (window.confirm("Archive this story? It will disappear from public pages.")) startTransition(async () => {
+                  try {
+                    const result = await changePostStatus(post.id, "archived");
+                    if (!result.ok) { setMessage(result.message); setSaveState("error"); return; }
+                    startNavigation();
+                    router.push("/studio");
+                    router.refresh();
+                  } catch {
+                    setMessage("The story could not be archived. Please try again.");
+                    setSaveState("error");
+                  }
+                });
+              }}><Archive className="mr-2 size-4" />Archive story</Button>
             </div>
           </div>
         </div>

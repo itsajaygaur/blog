@@ -8,6 +8,19 @@ test("home introduces Draftline and reaches the reading room", async ({ page }) 
   await expect(page.getByRole("heading", { name: /ideas worth your attention/i })).toBeVisible();
 });
 
+test("route changes expose global navigation progress", async ({ page }) => {
+  await page.route(/\/stories\?.*_rsc=/, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await route.continue();
+  });
+  await page.goto("/");
+  const progress = page.locator("[data-navigation-progress]");
+  await page.getByRole("link", { name: /explore stories/i }).first().click({ noWaitAfter: true });
+  await expect(progress).toHaveAttribute("data-state", "loading");
+  await expect(page).toHaveURL(/\/stories/);
+  await expect(progress).toHaveAttribute("data-state", "idle");
+});
+
 test("story search has deterministic empty and reset states", async ({ page }) => {
   await page.goto("/stories?q=this-will-never-match-draftline");
   await expect(page.getByRole("heading", { name: "No stories found" })).toBeVisible();
