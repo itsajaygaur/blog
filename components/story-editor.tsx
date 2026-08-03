@@ -49,6 +49,8 @@ export function StoryEditor({ post }: { post: EditorPost }) {
   const saveQueueRef = useRef<Promise<number | null>>(Promise.resolve(post.version));
   const autosaveTimerRef = useRef<number | null>(null);
   const mounted = useRef(false);
+  const editorRootRef = useRef<HTMLDivElement>(null);
+  const getEditorRoot = useCallback(() => editorRootRef.current ?? undefined, []);
 
   const editor = useCreateBlockNote({
     initialContent: post.contentJson,
@@ -82,6 +84,11 @@ export function StoryEditor({ post }: { post: EditorPost }) {
       }
     },
   });
+
+  useEffect(() => {
+    document.documentElement.removeAttribute("data-mantine-color-scheme");
+    return () => document.documentElement.removeAttribute("data-mantine-color-scheme");
+  }, []);
 
   const persist = useCallback(() => {
     setSaveState("saving");
@@ -166,8 +173,8 @@ export function StoryEditor({ post }: { post: EditorPost }) {
   }
 
   return (
-    <MantineProvider forceColorScheme={editorTheme}>
-      <div className="editor-shell">
+    <MantineProvider forceColorScheme={editorTheme} getRootElement={getEditorRoot} cssVariablesSelector=".editor-shell">
+      <div ref={editorRootRef} className="editor-shell">
         <div className="sticky top-16 z-30 -mx-4 mb-10 border-b bg-background/92 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground" aria-live="polite">

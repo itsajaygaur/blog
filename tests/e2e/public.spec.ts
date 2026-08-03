@@ -10,6 +10,51 @@ test("home introduces Draftline and reaches the reading room", async ({ page }) 
   await expect(page.getByRole("heading", { name: /ideas worth your attention/i })).toBeVisible();
 });
 
+test("theme toggles keep the page and sticky header in sync", async ({ page }) => {
+  const hydrationErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error" && /hydration failed|server rendered html didn't match/i.test(message.text())) {
+      hydrationErrors.push(message.text());
+    }
+  });
+  await page.goto("/");
+  const themeToggle = page.getByRole("button", { name: /switch to (dark|light) theme/i });
+  const header = page.locator("header");
+
+  await themeToggle.click();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await expect(themeToggle).toHaveAccessibleName("Switch to light theme");
+  expect(await header.evaluate((element) => getComputedStyle(element).backgroundColor))
+    .toBe(await page.locator("body").evaluate((element) => getComputedStyle(element).backgroundColor));
+
+  await page.evaluate(() => {
+    document.documentElement.setAttribute("data-mantine-color-scheme", "dark");
+    const editorStyles = document.createElement("style");
+    editorStyles.textContent = `
+      :root[data-mantine-color-scheme='dark'] { --mantine-color-body: #1a1b1e; --mantine-color-text: #c1c2c5; }
+      body { background-color: var(--mantine-color-body); color: var(--mantine-color-text); }
+    `;
+    document.head.appendChild(editorStyles);
+  });
+  await themeToggle.click();
+  await expect(page.locator("html")).toHaveClass(/light/);
+  expect(await header.evaluate((element) => getComputedStyle(element).backgroundColor))
+    .toBe(await page.locator("body").evaluate((element) => getComputedStyle(element).backgroundColor));
+
+  await themeToggle.evaluate((button: HTMLButtonElement) => {
+    button.click();
+    button.click();
+  });
+  await expect(page.locator("html")).toHaveClass(/light/);
+  await expect(themeToggle).toHaveAccessibleName("Switch to dark theme");
+
+  await themeToggle.click();
+  await page.reload();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await expect(themeToggle).toHaveAccessibleName("Switch to light theme");
+  expect(hydrationErrors).toEqual([]);
+});
+
 test("route changes expose global navigation progress", async ({ page }) => {
   await page.route(/\/stories\?.*_rsc=/, async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 500));
