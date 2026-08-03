@@ -3,6 +3,7 @@
 import { LogOut, PenLine, Settings } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { startNavigation } from "@/components/navigation-progress";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 
@@ -31,6 +32,7 @@ export function AuthControls({ signedIn }: { signedIn: boolean }) {
         aria-label="Sign out"
         onClick={async () => {
           await authClient.signOut();
+          startNavigation();
           router.push("/");
           router.refresh();
         }}
