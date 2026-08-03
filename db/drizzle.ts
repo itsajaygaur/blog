@@ -1,9 +1,21 @@
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
-import * as schema from './schema';
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+import * as schema from "./schema";
 
-const sql = neon(process.env.NEON_DATABASE_URL!);
+function createDb() {
+  const connectionString =
+    process.env.DATABASE_URL ??
+    process.env.NEON_DATABASE_URL ??
+    "postgresql://draftline:build-only@localhost/draftline";
 
-const db = drizzle(sql, {schema});
+  return drizzle(neon(connectionString), { schema });
+}
 
-export default db;
+let database: ReturnType<typeof createDb> | undefined;
+
+export function getDb() {
+  database ??= createDb();
+  return database;
+}
+
+export default getDb;
