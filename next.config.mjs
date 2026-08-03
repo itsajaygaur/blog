@@ -5,7 +5,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com https://lh3.googleusercontent.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.blob.vercel-storage.com https://accounts.google.com",
+  "connect-src 'self' https://blob.vercel-storage.com https://*.blob.vercel-storage.com https://accounts.google.com",
   "frame-src https://accounts.google.com",
   "base-uri 'self'",
   "form-action 'self'",
