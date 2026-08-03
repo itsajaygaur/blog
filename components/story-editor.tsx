@@ -46,6 +46,8 @@ export function StoryEditor({ post }: { post: EditorPost }) {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
   const versionRef = useRef(post.version);
+  const saveQueueRef = useRef<Promise<number | null>>(Promise.resolve(post.version));
+  const autosaveTimerRef = useRef<number | null>(null);
   const mounted = useRef(false);
 
   const editor = useCreateBlockNote({
@@ -58,6 +60,8 @@ export function StoryEditor({ post }: { post: EditorPost }) {
         throw new Error(validationMessage);
       }
       try {
+        setMessage("");
+        setFieldErrors({});
         const result = await upload(`draftline/${post.id}/${file.name}`, file, {
           access: "public",
           handleUploadUrl: "/api/uploads",
@@ -79,36 +83,40 @@ export function StoryEditor({ post }: { post: EditorPost }) {
     },
   });
 
-  const persist = useCallback(async () => {
+  const persist = useCallback(() => {
     setSaveState("saving");
-    try {
-      const result = await saveDraft({
-        id: post.id,
-        title,
-        excerpt,
-        contentJson: editor.document,
-        coverImageUrl,
-        coverImageAlt,
-        tags: tagInput.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 5),
-        version: versionRef.current,
-      });
-      if (!result.ok) {
+    const operation = saveQueueRef.current.then(async () => {
+      try {
+        const result = await saveDraft({
+          id: post.id,
+          title,
+          excerpt,
+          contentJson: editor.document,
+          coverImageUrl,
+          coverImageAlt,
+          tags: tagInput.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 5),
+          version: versionRef.current,
+        });
+        if (!result.ok) {
+          setSaveState("error");
+          setMessage(result.message);
+          setFieldErrors(result.fieldErrors ?? {});
+          return null;
+        }
+        versionRef.current = result.data.version;
+        setSaveState("saved");
+        setMessage("");
+        setFieldErrors({});
+        return result.data.version;
+      } catch {
         setSaveState("error");
-        setMessage(result.message);
-        setFieldErrors(result.fieldErrors ?? {});
+        setMessage("Draftline could not save this change. Your work is still in the editor—please try again.");
+        setFieldErrors({});
         return null;
       }
-      versionRef.current = result.data.version;
-      setSaveState("saved");
-      setMessage("");
-      setFieldErrors({});
-      return result.data.version;
-    } catch {
-      setSaveState("error");
-      setMessage("Draftline could not save this change. Your work is still in the editor—please try again.");
-      setFieldErrors({});
-      return null;
-    }
+    });
+    saveQueueRef.current = operation;
+    return operation;
   }, [coverImageAlt, coverImageUrl, editor, excerpt, post.id, tagInput, title]);
 
   useEffect(() => {
@@ -117,8 +125,17 @@ export function StoryEditor({ post }: { post: EditorPost }) {
       return;
     }
     setSaveState("unsaved");
-    const timer = window.setTimeout(() => void persist(), 1200);
-    return () => window.clearTimeout(timer);
+    if (autosaveTimerRef.current !== null) window.clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = window.setTimeout(() => {
+      autosaveTimerRef.current = null;
+      void persist();
+    }, 1200);
+    return () => {
+      if (autosaveTimerRef.current !== null) {
+        window.clearTimeout(autosaveTimerRef.current);
+        autosaveTimerRef.current = null;
+      }
+    };
   }, [title, excerpt, tagInput, coverImageUrl, coverImageAlt, revision, persist]);
 
   async function uploadCover(file: File) {
@@ -130,6 +147,8 @@ export function StoryEditor({ post }: { post: EditorPost }) {
     }
     try {
       setSaveState("saving");
+      setMessage("");
+      setFieldErrors({});
       const result = await upload(`draftline/${post.id}/cover-${file.name}`, file, {
         access: "public",
         handleUploadUrl: "/api/uploads",
@@ -166,6 +185,10 @@ export function StoryEditor({ post }: { post: EditorPost }) {
                 size="sm"
                 disabled={isPending || saveState === "saving"}
                 onClick={() => startTransition(async () => {
+                  if (autosaveTimerRef.current !== null) {
+                    window.clearTimeout(autosaveTimerRef.current);
+                    autosaveTimerRef.current = null;
+                  }
                   const version = await persist();
                   if (!version) return;
                   try {

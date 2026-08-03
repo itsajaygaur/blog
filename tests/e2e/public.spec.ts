@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("home introduces Draftline and reaches the reading room", async ({ page }) => {
   const response = await page.goto("/");
+  expect(response?.headers()["content-security-policy"]).toContain("https://vercel.com");
   expect(response?.headers()["content-security-policy"]).toContain("https://blob.vercel-storage.com");
   await expect(page.getByRole("heading", { name: /make room for better ideas/i })).toBeVisible();
   await page.getByRole("link", { name: /explore stories/i }).first().click();

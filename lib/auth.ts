@@ -9,6 +9,7 @@ import {
   authUsers,
   authVerifications,
 } from "@/db/schema";
+import { syncLegacyUser } from "@/lib/legacy-auth";
 import { createHandle } from "@/lib/text";
 
 const googleClientId = process.env.AUTH_GOOGLE_ID?.trim();
@@ -68,6 +69,9 @@ export const auth = betterAuth({
             bio: "",
           },
         }),
+        after: async (user) => {
+          await syncLegacyUser(user);
+        },
       },
     },
   },

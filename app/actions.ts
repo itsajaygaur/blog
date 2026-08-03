@@ -9,6 +9,7 @@ import { getDb } from "@/db/drizzle";
 import { authUsers, posts, postTags, tags } from "@/db/schema";
 import { EMPTY_DOCUMENT, processBlocks } from "@/lib/content";
 import { requireSession } from "@/lib/session";
+import { syncLegacyUser } from "@/lib/legacy-auth";
 import { createPostSlug, slugify } from "@/lib/text";
 import {
   type ActionResult,
@@ -47,6 +48,7 @@ async function syncTags(postId: string, names: string[]) {
 export async function createDraft() {
   const session = await requireSession("/studio");
   const id = randomUUID();
+  await syncLegacyUser(session.user);
   await getDb().insert(posts).values({
     id,
     slug: createPostSlug("untitled", id),
@@ -196,6 +198,7 @@ export async function updateProfile(
       .update(authUsers)
       .set({ ...parsed.data, updatedAt: new Date() })
       .where(eq(authUsers.id, session.user.id));
+    await syncLegacyUser({ ...session.user, name: parsed.data.name });
   } catch {
     return { ok: false, message: "That handle is already in use." };
   }
