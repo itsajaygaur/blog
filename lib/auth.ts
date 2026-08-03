@@ -11,6 +11,9 @@ import {
 } from "@/db/schema";
 import { createHandle } from "@/lib/text";
 
+const googleClientId = process.env.AUTH_GOOGLE_ID?.trim();
+const googleClientSecret = process.env.AUTH_GOOGLE_SECRET?.trim();
+
 function getBaseUrl() {
   if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
@@ -24,8 +27,8 @@ export const auth = betterAuth({
   appName: "Draftline",
   baseURL: getBaseUrl(),
   secret:
-    process.env.BETTER_AUTH_SECRET ??
-    process.env.AUTH_SECRET ??
+    process.env.BETTER_AUTH_SECRET?.trim() ||
+    process.env.AUTH_SECRET?.trim() ||
     (process.env.NEXT_PHASE ? "draftline-build-placeholder-secret-change-me" : undefined),
   database: drizzleAdapter(getDb(), {
     provider: "pg",
@@ -36,12 +39,10 @@ export const auth = betterAuth({
       verification: authVerifications,
     },
   }),
-  socialProviders: {
-    google: {
-      clientId: process.env.AUTH_GOOGLE_ID ?? "",
-      clientSecret: process.env.AUTH_GOOGLE_SECRET ?? "",
-    },
-  },
+  socialProviders:
+    googleClientId && googleClientSecret
+      ? { google: { clientId: googleClientId, clientSecret: googleClientSecret } }
+      : {},
   account: {
     encryptOAuthTokens: true,
   },
