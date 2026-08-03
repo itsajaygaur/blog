@@ -22,8 +22,10 @@ async function verifyImageSignature(url: string, declaredType: string) {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as HandleUploadBody;
+  let requestType = "unknown";
   try {
+    const body = (await request.json()) as HandleUploadBody;
+    requestType = body.type;
     const response = await handleUpload({
       body,
       request,
@@ -35,6 +37,11 @@ export async function POST(request: Request) {
         const owned = await getDb().query.posts.findFirst({ where: and(eq(posts.id, payload.postId), eq(posts.authorId, session.user.id)), columns: { id: true } });
         if (!owned) throw new Error("You do not have access to this story.");
         if (!pathname.startsWith(`draftline/${payload.postId}/`)) throw new Error("Invalid upload path.");
+        console.info("[uploads] client token granted", {
+          postId: payload.postId,
+          pathname,
+          size: payload.size,
+        });
         return {
           allowedContentTypes: [...ALLOWED_IMAGE_TYPES],
           maximumSizeInBytes: MAX_UPLOAD_BYTES,
@@ -47,10 +54,20 @@ export async function POST(request: Request) {
         if (!payload.userId || !payload.postId || !ALLOWED_IMAGE_TYPES.includes(blob.contentType as (typeof ALLOWED_IMAGE_TYPES)[number])) throw new Error("Invalid completed upload.");
         await verifyImageSignature(blob.url, blob.contentType);
         await getDb().insert(media).values({ id: randomUUID(), ownerId: payload.userId, postId: payload.postId, pathname: blob.pathname, url: blob.url, contentType: blob.contentType, size: payload.size, altText: payload.altText }).onConflictDoNothing();
+        console.info("[uploads] upload completed", {
+          postId: payload.postId,
+          pathname: blob.pathname,
+          contentType: blob.contentType,
+          size: payload.size,
+        });
       },
     });
     return Response.json(response);
   } catch (error) {
+    console.error("[uploads] request failed", {
+      requestType,
+      message: error instanceof Error ? error.message : "Upload failed.",
+    });
     return Response.json({ error: error instanceof Error ? error.message : "Upload failed." }, { status: 400 });
   }
 }

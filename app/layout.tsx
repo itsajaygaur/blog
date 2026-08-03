@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Newsreader } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Footer } from "@/components/footer";
+import { NavigationProgress } from "@/components/navigation-progress";
 import { SiteHeader } from "@/components/site-header";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/constants";
 
@@ -47,7 +49,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`${geist.variable} ${newsreader.variable}`}>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <Suspense fallback={null}>
+            <NavigationProgress />
+          </Suspense>
           <a href="#main-content" className="sr-only z-50 rounded-md bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
             Skip to content
           </a>

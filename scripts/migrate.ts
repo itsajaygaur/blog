@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { neon } from "@neondatabase/serverless";
-import { convertLegacyHtml } from "../lib/content";
+import { convertLegacyHtml } from "./lib/legacy-content";
 
 async function main() {
   const connectionString = process.env.DATABASE_URL ?? process.env.NEON_DATABASE_URL;
