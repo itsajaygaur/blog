@@ -13,7 +13,10 @@ export function AuthControls({ signedIn }: { signedIn: boolean }) {
   if (!signedIn) {
     return (
       <Button asChild size="sm">
-        <Link href="/sign-in">Start writing</Link>
+        <Link href="/sign-in">
+          <span className="sm:hidden">Write</span>
+          <span className="hidden sm:inline">Start writing</span>
+        </Link>
       </Button>
     );
   }
